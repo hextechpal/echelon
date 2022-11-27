@@ -40,7 +40,7 @@ func NewWorker(c *config.Config) (*Worker, error) {
 func (w *Worker) initServer(addr string) error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		_, _ = fmt.Fprintf(w, "hello\n")
+		w.Write([]byte("hell0"))
 	})
 	server := &http.Server{
 		Addr:    addr,

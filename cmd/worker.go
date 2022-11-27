@@ -24,7 +24,7 @@ var workerCmd = &cobra.Command{
 		path, _ := cmd.Flags().GetString(envArg)
 		err := godotenv.Load(path)
 		if err != nil {
-			panic("error parsing config file")
+			log.Printf("cannot parse config file")
 		}
 
 		c, err := config.Load()
@@ -32,6 +32,7 @@ var workerCmd = &cobra.Command{
 			panic("error loading config")
 		}
 
+		log.Printf("Inittiating worker with config=%v\n", c)
 		worker, err := worker.NewWorker(c)
 		if err != nil {
 			panic("error initiating worker")
