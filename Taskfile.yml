@@ -1,0 +1,22 @@
+version: 3
+
+dotenv: ['local.env']
+
+tasks:
+  build:
+    vars:
+      GOOS:
+        sh: go env GOOS
+      GOARCH:
+        sh: go env GOARCH
+    cmds:
+      - go build -o release/{{.GOOS}}/{{.GOARCH}}/echelon
+
+  start:
+    vars:
+      GOOS:
+        sh: go env GOOS
+      GOARCH:
+        sh: go env GOARCH
+    cmds:
+      - ./release/{{.GOOS}}/{{.GOARCH}}/echelon worker
