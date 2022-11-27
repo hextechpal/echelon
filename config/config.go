@@ -21,8 +21,9 @@ type Config struct {
 	}
 
 	Serf struct {
-		BindAddress string `envconfig:"ECHELON_BIND_ADDRESS"`
-		BindPort    int    `envconfig:"ECHELON_BIND_PORT"`
+		BindAddress string   `envconfig:"ECHELON_BIND_ADDRESS"`
+		BindPort    int      `envconfig:"ECHELON_BIND_PORT"`
+		JoinAddrs   []string `envconfig:"ECHELON_JOIN_ADDRS"`
 	}
 }
 
