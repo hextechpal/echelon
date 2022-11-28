@@ -25,7 +25,9 @@ spec:
           - |-
             ID=$(echo $HOSTNAME | rev | cut -d- -f1 | rev)
             cat > /var/run/{{ include "echelon.name" . }}/conf.env <<EOD
-            $([ $ID != 0 ] && echo 'ECHELON_JOIN_ADDRS="ech-worker-0.ech-hl.{{.Release.Namespace}}.svc.cluster.local:{{.Values.serfPort}}"')
+            ECHELON_SERVER_ADDRESS="$HOSTNAME.ech-hl.{{.Release.Namespace}}.svc.cluster.local:{{.Values.rpcPort}}"
+            ECHELON_BIND_ADDRESS="$HOSTNAME.ech-hl.{{.Release.Namespace}}.svc.cluster.local:{{.Values.serfPort}}"
+            $([ $ID != 0 ] && echo 'ECHELON_JOIN_ADDRESSES="ech-worker-0.ech-hl.{{.Release.Namespace}}.svc.cluster.local:{{.Values.serfPort}}", ')
             EOD
         volumeMounts:
         - name: data-dir

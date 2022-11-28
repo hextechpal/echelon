@@ -2,7 +2,6 @@ package worker
 
 import (
 	"context"
-	"fmt"
 	"github.com/goombaio/namegenerator"
 	"github.com/hashicorp/serf/serf"
 	"github.com/hextechpal/echelon/config"
@@ -30,7 +29,7 @@ func NewWorker(c *config.Config) (*Worker, error) {
 	if err := w.initMemberShip(c); err != nil {
 		return nil, err
 	}
-	if err := w.initServer(fmt.Sprintf(":%d", c.ServerPort)); err != nil {
+	if err := w.initServer(c.ServerAddress); err != nil {
 		return nil, err
 	}
 	go w.monitor()
@@ -40,7 +39,7 @@ func NewWorker(c *config.Config) (*Worker, error) {
 func (w *Worker) initServer(addr string) error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("hell0"))
+		_, _ = w.Write([]byte("hell0"))
 	})
 	server := &http.Server{
 		Addr:    addr,
@@ -58,9 +57,9 @@ func (w *Worker) initServer(addr string) error {
 func (w *Worker) initMemberShip(c *config.Config) error {
 	membership, err := discovery.NewMembership(discovery.Config{
 		NodeName:  w.name,
-		BindAddr:  fmt.Sprintf(":%d", c.BindPort),
+		BindAddr:  c.BindAddress,
 		Tags:      nil,
-		JoinAddrs: c.JoinAddrs,
+		JoinAddrs: c.JoinAddresses,
 	})
 	if err != nil {
 		return err
@@ -115,16 +114,18 @@ func (w *Worker) monitor() {
 		case <-ticker.C:
 			log.Printf("tick happened")
 			for _, m := range w.cluster.Members() {
-				log.Printf("name=%s, addr=%s, status=%v", m.Name, m.Addr, m.Status)
+				log.Printf("name=%s, addr=%s, status=%v\n", m.Name, m.Addr, m.Status)
 			}
 		}
 	}
 }
 
 func (w *Worker) Join(name, addr string) error {
+	log.Printf("member joined name=%s, addr=%s\n", name, addr)
 	return nil
 }
 
 func (w *Worker) Leave(name string) error {
+	log.Printf("member left name=%s\n", name)
 	return nil
 }

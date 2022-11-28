@@ -8,9 +8,9 @@ import (
 type Config struct {
 	Debug bool `envconfig:"ECHELON_DEBUG"`
 
-	ServerPort int      `envconfig:"ECHELON_SERVER_PORT"`
-	BindPort   int      `envconfig:"ECHELON_BIND_PORT"`
-	JoinAddrs  []string `envconfig:"ECHELON_JOIN_ADDRS"`
+	ServerAddress string   `envconfig:"ECHELON_SERVER_ADDRESS"`
+	BindAddress   string   `envconfig:"ECHELON_BIND_ADDRESS"`
+	JoinAddresses []string `envconfig:"ECHELON_JOIN_ADDRESSES"`
 
 	DB struct {
 		Host     string `envconfig:"ECHELON_DB_HOST"`     // Only sql is supported for now
@@ -22,7 +22,7 @@ type Config struct {
 }
 
 func (c *Config) String() string {
-	return fmt.Sprintf("serverPort=%d, bindPort=%d, joinAddrs=%v", c.ServerPort, c.BindPort, c.JoinAddrs)
+	return fmt.Sprintf("server=%s, bind=%s, joinAddrs=%v", c.ServerAddress, c.BindAddress, c.JoinAddresses)
 }
 
 func Load() (*Config, error) {
