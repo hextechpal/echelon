@@ -14,11 +14,11 @@ import (
 )
 
 type Worker struct {
-	name       string
-	doneCh     chan bool
-	stopLock   sync.Mutex
-	membership *discovery.Membership
-	server     *http.Server
+	name     string
+	doneCh   chan bool
+	stopLock sync.Mutex
+	cluster  *discovery.Cluster
+	server   *http.Server
 }
 
 func NewWorker(c *config.Config) (*Worker, error) {
@@ -30,10 +30,10 @@ func NewWorker(c *config.Config) (*Worker, error) {
 	if err := w.initMemberShip(c); err != nil {
 		return nil, err
 	}
-	if err := w.initServer(fmt.Sprintf("%s:%d", c.Server.Host, c.Server.Port)); err != nil {
+	if err := w.initServer(fmt.Sprintf(":%d", c.ServerPort)); err != nil {
 		return nil, err
 	}
-
+	go w.monitor()
 	return w, nil
 }
 
@@ -58,14 +58,14 @@ func (w *Worker) initServer(addr string) error {
 func (w *Worker) initMemberShip(c *config.Config) error {
 	membership, err := discovery.NewMembership(discovery.Config{
 		NodeName:  w.name,
-		BindAddr:  fmt.Sprintf("%s:%d", c.Serf.BindAddress, c.Serf.BindPort),
+		BindAddr:  fmt.Sprintf(":%d", c.BindPort),
 		Tags:      nil,
-		JoinAddrs: c.Serf.JoinAddrs,
+		JoinAddrs: c.JoinAddrs,
 	})
 	if err != nil {
 		return err
 	}
-	w.membership = membership
+	w.cluster = membership
 	return nil
 
 }
@@ -75,7 +75,7 @@ func (w *Worker) Stop() {
 	defer w.stopLock.Unlock()
 
 	log.Printf("leaving cluster")
-	err := w.membership.Leave()
+	err := w.cluster.Leave()
 	if err != nil {
 		log.Printf("err leaving cluster err=%v\n", err)
 	}
@@ -87,13 +87,14 @@ func (w *Worker) Stop() {
 }
 
 func (w *Worker) monitor() {
+	ticker := time.NewTicker(5 * time.Second)
 	for {
 		select {
-		case e := <-w.membership.EventCh():
+		case e := <-w.cluster.EventCh():
 			switch e.EventType() {
 			case serf.EventMemberJoin:
 				for _, member := range e.(serf.MemberEvent).Members {
-					if w.membership.IsLocal(member) {
+					if w.cluster.IsLocal(member) {
 						continue
 					}
 					if err := w.Join(member.Name, member.Tags["rpc_addr"]); err != nil {
@@ -102,24 +103,28 @@ func (w *Worker) monitor() {
 				}
 			case serf.EventMemberLeave, serf.EventMemberFailed:
 				for _, member := range e.(serf.MemberEvent).Members {
-					if w.membership.IsLocal(member) {
+					if w.cluster.IsLocal(member) {
 						return
 					}
 					if err := w.Leave(member.Name); err != nil {
 						log.Printf("failed to join %v, %v", member, err)
 					}
 				}
+
+			}
+		case <-ticker.C:
+			log.Printf("tick happened")
+			for _, m := range w.cluster.Members() {
+				log.Printf("name=%s, addr=%s, status=%v", m.Name, m.Addr, m.Status)
 			}
 		}
 	}
 }
 
 func (w *Worker) Join(name, addr string) error {
-	//TODO implement me
-	panic("implement me")
+	return nil
 }
 
 func (w *Worker) Leave(name string) error {
-	//TODO implement me
-	panic("implement me")
+	return nil
 }

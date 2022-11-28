@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ech-worker
+  namespace: {{ .Release.Namespace }}
+  labels: {{ include "echelon.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {{ include "echelon.selectorLabels" . | nindent 6 }}
+  serviceName: ech-hl
+  replicas: {{ .Values.replicas }}
+  template:
+    metadata:
+      name: {{ include "echelon.fullname" . }}
+      labels: {{ include "echelon.labels" . | nindent 8 }}
+    spec:
+      # initContainers...
+      initContainers:
+      - name: {{ include "echelon.fullname" . }}-config-init
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        command:          
+          - /bin/sh
+          - -c
+          - |-
+            ID=$(echo $HOSTNAME | rev | cut -d- -f1 | rev)
+            cat > /var/run/{{ include "echelon.name" . }}/conf.env <<EOD
+            $([ $ID != 0 ] && echo 'ECHELON_JOIN_ADDRS="ech-worker-0.ech-hl.{{.Release.Namespace}}.svc.cluster.local:{{.Values.serfPort}}"')
+            EOD
+        volumeMounts:
+        - name: data-dir
+          mountPath: /var/run/echelon
+      # containers...
+      containers:
+      - name: {{ include "echelon.fullname" . }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        ports:
+        - containerPort: {{ .Values.rpcPort }}
+          name: rpc
+        - containerPort: {{ .Values.serfPort }}
+          name: serf
+        args:
+          - -e=/var/run/{{ include "echelon.name" .}}/conf.env
+        envFrom:
+            - configMapRef:
+                name: echelon-cm
+        # probes...
+        readinessProbe:
+          httpGet:
+            port: {{.Values.rpcPort}}
+          initialDelaySeconds: 5
+        livenessProbe:
+          httpGet:
+            port: {{.Values.rpcPort}}
+          initialDelaySeconds: 10
+        volumeMounts:
+        - name: data-dir
+          mountPath: /var/run/echelon
+  volumeClaimTemplates:
+  - metadata:
+      name: data-dir
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: {{ .Values.storage }}

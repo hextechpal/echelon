@@ -18,3 +18,7 @@ tasks:
         sh: go env GOARCH
     cmds:
       - ./release/{{.GOOS}}/{{.GOARCH}}/echelon worker -e {{.ENV_FILE | default "local.env"}}
+
+  build-image:
+    cmds:
+      - docker build -t ppal31/echelon:{{.TAG | default "latest"}} .

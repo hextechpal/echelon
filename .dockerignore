@@ -1,0 +1,7 @@
+deploy/
+release/
+**/*.md
+.gitignore
+LICENSE
+*.env
+Taskfile.yml

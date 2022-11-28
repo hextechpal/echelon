@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: echelon-cm
+  namespace: {{ .Release.Namespace }}
+data:
+  ECHELON_SERVER_PORT: {{.Values.rpcPort | quote}}
+  ECHELON_BIND_PORT: {{.Values.serfPort | quote}}
